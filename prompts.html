@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeisureFlow — 10 Prompts Séquentiels</title>
+  <style>
+    /* ── Reset & base ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d0d1a;
+      --surface:  #1a1a2e;
+      --surface2: #16213e;
+      --accent:   #00d2ff;
+      --accent2:  #7b2ff7;
+      --text:     #e0e0f0;
+      --text-dim: #8888aa;
+      --success:  #00e676;
+      --border:   #2a2a4a;
+      --radius:   12px;
+      --font:     'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 0 0 60px;
+    }
+
+    /* ── Scrollbar ──────────────────────────────────────────────── */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent) var(--surface);
+    }
+    *::-webkit-scrollbar { width: 6px; height: 6px; }
+    *::-webkit-scrollbar-track { background: var(--surface); border-radius: 3px; }
+    *::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+    *::-webkit-scrollbar-thumb:hover { background: var(--accent2); }
+
+    /* ── Header ─────────────────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, var(--surface2) 0%, var(--surface) 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 28px 24px 20px;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    header h1 {
+      font-size: clamp(1.4rem, 4vw, 2.2rem);
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
+    }
+
+    header p {
+      color: var(--text-dim);
+      font-size: clamp(0.8rem, 2.5vw, 0.95rem);
+    }
+
+    /* ── Progress bar ───────────────────────────────────────────── */
+    #progress-section {
+      padding: 16px 24px 0;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    #progress-label {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #progress-label span { color: var(--accent); font-weight: 600; }
+
+    #progress-bar-track {
+      height: 6px;
+      background: var(--surface);
+      border-radius: 3px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    #progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+
+    /* ── Main container ─────────────────────────────────────────── */
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 24px 16px;
+    }
+
+    /* ── Prompt card ────────────────────────────────────────────── */
+    .prompt-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      overflow: hidden;
+      transition: border-color 0.25s, box-shadow 0.25s;
+    }
+
+    .prompt-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 20px rgba(0, 210, 255, 0.08);
+    }
+
+    .prompt-card.copied {
+      border-color: var(--success);
+      box-shadow: 0 0 18px rgba(0, 230, 118, 0.12);
+    }
+
+    /* ── Prompt header (toggle button) ─────────────────────────── */
+    .prompt-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 20px;
+      cursor: pointer;
+      user-select: none;
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+      color: inherit;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+
+    .prompt-header:hover { background: rgba(255,255,255,0.03); }
+    .prompt-header:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+    }
+
+    .prompt-number {
+      width: 34px;
+      height: 34px;
+      min-width: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .prompt-title {
+      flex: 1;
+      font-size: clamp(0.9rem, 2.5vw, 1.05rem);
+      font-weight: 600;
+    }
+
+    .prompt-status {
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.06);
+      color: var(--text-dim);
+      white-space: nowrap;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .prompt-card.copied .prompt-status {
+      background: rgba(0,230,118,0.15);
+      color: var(--success);
+    }
+
+    .chevron {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      fill: none;
+      stroke: var(--text-dim);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform 0.3s ease;
+    }
+
+    .prompt-card[aria-expanded="true"] .chevron {
+      transform: rotate(180deg);
+    }
+
+    /* ── Prompt body (collapsible) ──────────────────────────────── */
+    .prompt-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .prompt-body.open {
+      max-height: 3000px;
+    }
+
+    .prompt-body-inner {
+      padding: 0 20px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Pre / code block ───────────────────────────────────────── */
+    .prompt-text {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+      font-size: clamp(0.75rem, 2vw, 0.88rem);
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-x: auto;
+      margin: 16px 0;
+      color: #c8d0f0;
+      max-height: 460px;
+      overflow-y: auto;
+    }
+
+    /* ── Action buttons ─────────────────────────────────────────── */
+    .prompt-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+      min-height: 44px;          /* touch-friendly */
+    }
+
+    .btn:active { transform: scale(0.97); }
+    .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    .btn-copy {
+      background: linear-gradient(135deg, var(--accent), #0099cc);
+      color: #000;
+    }
+    .btn-copy:hover { box-shadow: 0 4px 18px rgba(0,210,255,0.35); }
+
+    .btn-next {
+      background: linear-gradient(135deg, var(--accent2), #5a1fb5);
+      color: #fff;
+    }
+    .btn-next:hover { box-shadow: 0 4px 18px rgba(123,47,247,0.35); }
+
+    .btn-success {
+      background: rgba(0,230,118,0.15);
+      color: var(--success);
+      border: 1px solid var(--success);
+      cursor: default;
+    }
+
+    /* ── Toast notification ─────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      right: 20px;
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-size: 0.9rem;
+      color: var(--accent);
+      box-shadow: 0 6px 28px rgba(0,0,0,0.5);
+      transform: translateY(20px);
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+      pointer-events: none;
+      z-index: 999;
+      max-width: calc(100vw - 40px);
+    }
+
+    #toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ── Responsive ─────────────────────────────────────────────── */
+    @media (max-width: 600px) {
+      header { padding: 20px 16px 14px; }
+      #progress-section { padding: 14px 16px 0; }
+      main { padding: 16px 10px; }
+      .prompt-header { padding: 14px 14px; gap: 10px; }
+      .prompt-body-inner { padding: 0 14px 16px; }
+      .prompt-text { padding: 12px; }
+      .prompt-actions { gap: 8px; }
+      .btn { padding: 10px 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- HEADER                                                          -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<header>
+  <h1>🌊 LeisureFlow — Prompts de Construction</h1>
+  <p>10 prompts séquentiels · React Native Expo + Node.js + OpenWeather One Call API 3.0</p>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PROGRESS BAR                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div id="progress-section" role="region" aria-label="Progression de la copie des prompts">
+  <div id="progress-label">
+    <span id="progress-text">0/10 prompts copiés</span>
+    <span id="progress-pct">0 %</span>
+  </div>
+  <div id="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="10" aria-label="Barre de progression">
+    <div id="progress-bar-fill"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PROMPTS                                                         -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<main id="prompts-list" role="list">
+
+  <!-- ─── PROMPT 1 ────────────────────────────────────────────── -->
+  <article class="prompt-card" id="card-1" aria-expanded="false" role="listitem">
+    <button class="prompt-header" onclick="toggleCard(1)"
+            aria-controls="body-1"
+            aria-label="Prompt 1 : Initialisation du projet — ouvrir ou fermer">
+      <span class="prompt-number" aria-hidden="true">1</span>
+      <span class="prompt-title">Initialisation du projet</span>
+      <span class="prompt-status" id="status-1">En attente</span>
+      <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="prompt-body" id="body-1" role="region" aria-label="Contenu du prompt 1">
+      <div class="prompt-body-inner">
+        <pre class="prompt-text" id="text-1">Crée une application complète appelée "LeisureFlow" — une app de gestion du temps libre.
+
+STACK TECHNIQUE :
+- Backend : Node.js + Express.js + Sequelize ORM + PostgreSQL + Redis
+- Mobile : React Native avec Expo SDK 50 + Expo Router + React Query v5
+- API Météo : OpenWeather One Call API 3.0
+
+STRUCTURE DU PROJET :
+leisureflow/
+├── backend/
+│   ├── src/
+│   │   ├── config/ (database.js, redis.js, logger.js, env.js)
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── controllers/
+│   │   ├── services/
+│   │   ├── middleware/
+│   │   └── seeds/
+│   ├── package.json
+│   ├── .env.example
+│   └── Dockerfile
+├── mobile/
+│   ├── app/
+│   │   ├── _layout.tsx  (Expo Router root layout)
+│   │   ├── index.tsx    (page d'accueil)
+│   │   └── (tabs)/      (navigation par onglets)
+│   ├── src/
+│   │   ├── contexts/
+│   │   ├── components/
+│   │   ├── services/
+│   │   ├── hooks/
+│   │   ├── types/
+│   │   └── utils/
+│   ├── .env
+│   └── package.json
+└── docker-compose.yml
+
+Commence par créer :
+1. Le package.json backend avec toutes les dépendances (express, sequelize, pg, redis, jsonwebtoken, bcryptjs, axios, winston, socket.io, cors, helmet, dotenv, express-validator, node-cron, uuid)
+2. Le .env.example avec les variables : PORT, DB_HOST/PORT/NAME/USER/PASSWORD, REDIS_HOST/PORT, JWT_SECRET, OPENWEATHER_API_KEY, OPENWEATHER_BASE_URL=https://api.openweathermap.org/data/3.0/onecall, WEATHER_CACHE_TTL=300, WEATHER_UNITS=metric, WEATHER_LANG=fr
+3. Les fichiers de config : database.js (Sequelize + PostgreSQL), redis.js (avec getCache/setCache/deleteCache), logger.js (Winston), env.js
+4. Le fichier index.js principal du serveur Express (avec helmet, cors, morgan, socket.io, health check)
+5. Le docker-compose.yml (postgres + redis + backend)</pre>
+        <div class="prompt-actions">
+          <button class="btn btn-copy" id="btn-copy-1" onclick="copyPrompt(1)"
+                  aria-label="Copier le prompt 1 dans le presse-papier">
+            📋 Copier ce prompt
+          </button>
+          <button class="btn btn-next" onclick="nextPrompt(1)"
+                  aria-label="Marquer le prompt 1 comme copié et passer au prompt 2">
+            ✅ Copié — Prompt suivant
+          </button>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─── PROMPT 2 ────────────────────────────────────────────── -->
+  <article class="prompt-card" id="card-2" aria-expanded="false" role="listitem">
+    <button class="prompt-header" onclick="toggleCard(2)"
+            aria-controls="body-2"
+            aria-label="Prompt 2 : Modèles de données — ouvrir ou fermer">
+      <span class="prompt-number" aria-hidden="true">2</span>
+      <span class="prompt-title">Modèles de données</span>
+      <span class="prompt-status" id="status-2">En attente</span>
+      <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="prompt-body" id="body-2" role="region" aria-label="Contenu du prompt 2">
+      <div class="prompt-body-inner">
+        <pre class="prompt-text" id="text-2">Continue LeisureFlow. Crée maintenant les modèles Sequelize et la base de données :
+
+★ MODÈLES SEQUELIZE (backend/src/models/) :
+
+1. User.js :
+   - id (UUID, primaryKey), email (unique, not null), password (not null, hashed), username, firstName, lastName
+   - preferences : { theme, language, notifications, weatherUnit }
+   - timestamps, hooks : beforeCreate/beforeUpdate → bcrypt hash password
+   - instance method : validatePassword(plain) → bcrypt.compare
+
+2. Activity.js :
+   - id (UUID), userId (FK → User), title, description, category (enum : outdoor, indoor, sport, culture, food, social, other)
+   - duration (minutes), difficulty (easy/medium/hard), isPublic (default false)
+   - weatherConstraints : { minTemp, maxTemp, maxWindSpeed, maxRainProb, requiresSunshine }
+   - location : { lat, lon, name, radius }
+   - tags (ARRAY STRING), images (ARRAY STRING)
+   - completionCount, rating, timestamps
+
+3. Event.js :
+   - id (UUID), userId (FK), activityId (FK → Activity), title
+   - scheduledAt, duration, status (enum : planned/confirmed/completed/cancelled/postponed)
+   - actualWeather (JSONB), weatherScore (0-100)
+   - notes, isRecurring, recurrenceRule, timestamps
+
+4. WeatherCache.js :
+   - id, lat (DECIMAL 9,6), lon (DECIMAL 9,6), data (JSONB), fetchedAt, expiresAt
+   - Index composite sur (lat, lon), scope : isExpired()
+
+5. UserSession.js :
+   - id (UUID), userId (FK), token (unique), deviceInfo (JSONB), expiresAt, isActive
+
+★ ASSOCIATIONS :
+- User hasMany Activity, Activity belongsTo User
+- User hasMany Event, Event belongsTo User
+- Activity hasMany Event, Event belongsTo Activity
+- User hasMany UserSession
+
+★ MIGRATION + SEED :
+- Créer les fichiers de migration Sequelize pour chaque modèle
+- Seed : 1 user de test (password hashé), 5 activities variées avec weatherConstraints, 3 events
+
+★ INDEX.JS models (backend/src/models/index.js) :
+- Importe Sequelize, charge tous les modèles, définit les associations, exporte</pre>
+        <div class="prompt-actions">
+          <button class="btn btn-copy" id="btn-copy-2" onclick="copyPrompt(2)"
+                  aria-label="Copier le prompt 2 dans le presse-papier">
+            📋 Copier ce prompt
+          </button>
+          <button class="btn btn-next" onclick="nextPrompt(2)"
+                  aria-label="Marquer le prompt 2 comme copié et passer au prompt 3">
+            ✅ Copié — Prompt suivant
+          </button>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─── PROMPT 3 ────────────────────────────────────────────── -->
+  <article class="prompt-card" id="card-3" aria-expanded="false" role="listitem">
+    <button class="prompt-header" onclick="toggleCard(3)"
+            aria-controls="body-3"
+            aria-label="Prompt 3 : Middleware et Auth — ouvrir ou fermer">
+      <span class="prompt-number" aria-hidden="true">3</span>
+      <span class="prompt-title">Middleware + Auth</span>
+      <span class="prompt-status" id="status-3">En attente</span>
+      <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="prompt-body" id="body-3" role="region" aria-label="Contenu du prompt 3">
+      <div class="prompt-body-inner">
+        <pre class="prompt-text" id="text-3">Continue LeisureFlow. Crée le système d'authentification et les middlewares :
+
+★ MIDDLEWARE (backend/src/middleware/) :
+
+1. auth.js — middleware JWT :
+   - Extrait Bearer token du header Authorization
+   - Vérifie avec jwt.verify + JWT_SECRET
+   - Charge l'utilisateur depuis DB (sans password), attache à req.user
+   - Gestion erreurs : TokenExpiredError, JsonWebTokenError → 401
+
+2. errorHandler.js — gestionnaire d'erreurs global :
+   - Capture toutes les erreurs Express
+   - Format de réponse standard : { success: false, error: { code, message, details? } }
+   - Log avec Winston (level error pour 500, warn pour 4xx)
+   - Masque les détails en production
+
+3. rateLimiter.js — express-rate-limit :
+   - globalLimiter : 100 req/15min
+   - authLimiter : 5 req/15min (pour login/register)
+   - weatherLimiter : 30 req/min
+
+4. validator.js — wrappers express-validator :
+   - validateRequest(rules) : middleware qui applique les règles et renvoie 400 si invalide
+   - Règles authRules : email valide, password min 8 chars, username alphanumérique
+
+★ AUTH CONTROLLER + ROUTES (backend/src/controllers/authController.js + routes/auth.js) :
+
+Routes :
+- POST /api/auth/register
+- POST /api/auth/login
+- POST /api/auth/logout
+- GET  /api/auth/me (protégé)
+- POST /api/auth/refresh
+
+Logique :
+- register : validation, unicité email/username, hash password, créer User + UserSession, retourner JWT
+- login : trouver user, valider password, créer session, JWT avec payload {userId, email, sessionId}
+- logout : invalider session (isActive = false)
+- me : retourner user sans password
+- Tokens JWT : accessToken (1h) + refreshToken (7j) stockés dans UserSession</pre>
+        <div class="prompt-actions">
+          <button class="btn btn-copy" id="btn-copy-3" onclick="copyPrompt(3)"
+                  aria-label="Copier le prompt 3 dans le presse-papier">
+            📋 Copier ce prompt
+          </button>
+          <button class="btn btn-next" onclick="nextPrompt(3)"
+                  aria-label="Marquer le prompt 3 comme copié et passer au prompt 4">
+            ✅ Copié — Prompt suivant
+          </button>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─── PROMPT 4 ────────────────────────────────────────────── -->
+  <article class="prompt-card" id="card-4" aria-expanded="false" role="listitem">
+    <button class="prompt-header" onclick="toggleCard(4)"
+            aria-controls="body-4"
+            aria-label="Prompt 4 : API Météo Backend — ouvrir ou fermer">
+      <span class="prompt-number" aria-hidden="true">4</span>
+      <span class="prompt-title">API Météo Backend</span>
+      <span class="prompt-status" id="status-4">En attente</span>
+      <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="prompt-body" id="body-4" role="region" aria-label="Contenu du prompt 4">
+      <div class="prompt-body-inner">
+        <pre class="prompt-text" id="text-4">Continue LeisureFlow. Crée le service météo backend complet :
+
+★ WEATHER SERVICE (backend/src/services/weatherService.js) :
+
+Appel OpenWeather One Call API 3.0 :
+- URL : ${OPENWEATHER_BASE_URL}?lat={lat}&lon={lon}&appid=${OPENWEATHER_API_KEY}&units=${WEATHER_UNITS}&lang=${WEATHER_LANG}&exclude=minutely
+- fetchWeatherFromAPI(lat, lon) : appel axios, timeout 10s, retry 2x sur erreur réseau
+
+Cache Redis :
+- Clé cache : `weather:${lat.toFixed(4)}:${lon.toFixed(4)}`
+- TTL : WEATHER_CACHE_TTL secondes (300 par défaut)
+- getWeatherWithCache(lat, lon) : vérifie Redis → si miss, appel API → store Redis → retour
+- invalidateWeatherCache(lat, lon) : deleteCache
+
+Transformation des données :
+- transformCurrentWeather(data) : {temp, feelsLike, humidity, pressure, dewPoint, uvIndex, visibility, clouds, wind:{speed, speedKmh, deg, gust, direction}, weather:[{id,main,description,icon,iconUrl}], isDay, isOutdoorFriendly, comfortLevel:{score,label}}
+- transformHourly(data) : tableau 48h avec {dt, temp, feelsLike, humidity, wind, weather, pop, rain, snow}
+- transformDaily(data) : tableau 7j avec {dt, dayName, temp:{min,max,day,night}, feelsLike, humidity, uvIndex, wind, weather, pop, rain, snow, isOutdoorFriendly}
+- isOutdoorFriendly(weather) : true si temp 5-35°C, vent <50km/h, pluie <70%, pas d'alerte
+
+Calcul comfortLevel :
+- score 0-100 basé sur temp (25°C = 100), humidité (50% = 100), vent, UV
+- labels : Idéal / Agréable / Correct / Inconfortable / Dangereux
+
+★ WEATHER CONTROLLER + ROUTES (backend/src/controllers/weatherController.js + routes/weather.js) :
+
+Routes (protégées par auth middleware + weatherLimiter) :
+- GET /api/weather/current?lat=&lon=    → current + alerts
+- GET /api/weather/hourly?lat=&lon=     → 48h
+- GET /api/weather/daily?lat=&lon=      → 7 jours
+- GET /api/weather/alerts?lat=&lon=     → alertes uniquement
+- GET /api/weather/recommendation?lat=&lon=&activityType= → score + conseil
+
+Validation : lat entre -90 et 90, lon entre -180 et 180 (express-validator)
+Gestion erreurs OpenWeather : 401 (clé invalide), 429 (rate limit), 404 (coords invalides)</pre>
+        <div class="prompt-actions">
+          <button class="btn btn-copy" id="btn-copy-4" onclick="copyPrompt(4)"
+                  aria-label="Copier le prompt 4 dans le presse-papier">
+            📋 Copier ce prompt
+          </button>
+          <button class="btn btn-next" onclick="nextPrompt(4)"
+                  aria-label="Marquer le prompt 4 comme copié et passer au prompt 5">
+            ✅ Copié — Prompt suivant
+          </button>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─── PROMPT 5 ────────────────────────────────────────────── -->
+  <article class="prompt-card" id="card-5" aria-expanded="false" role="listitem">
+    <button class="prompt-header" onclick="toggleCard(5)"
+            aria-controls="body-5"
+            aria-label="Prompt 5 : Activities, Events, Suggestions, Stats — ouvrir ou fermer">
+      <span class="prompt-number" aria-hidden="true">5</span>
+      <span class="prompt-title">Activities, Events, Suggestions, Stats</span>
+      <span class="prompt-status" id="status-5">En attente</span>
+      <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="prompt-body" id="body-5" role="region" aria-label="Contenu du prompt 5">
+      <div class="prompt-body-inner">
+        <pre class="prompt-text" id="text-5">Continue LeisureFlow. Crée les routes Activities, Events, Suggestions et Stats :
+
+★ ACTIVITIES (backend/src/controllers/activitiesController.js + routes/activities.js) :
+- GET    /api/activities              → liste paginée (filter: category, difficulty, isPublic)
+- POST   /api/activities              → créer activité (auth requis)
+- GET    /api/activities/:id          → détail
+- PUT    /api/activities/:id          → modifier (owner only)
+- DELETE /api/activities/:id          → supprimer (owner only)
+- GET    /api/activities/public       → activités publiques (sans auth)
+- GET    /api/activities/recommended  → suggestions basées sur météo actuelle
+
+★ EVENTS (backend/src/controllers/eventsController.js + routes/events.js) :
+- GET    /api/events              → événements de l'utilisateur (filter: status, from, to)
+- POST   /api/events              → planifier un événement
+- GET    /api/events/:id          → détail avec météo prévue
+- PUT    /api/events/:id          → modifier
+- DELETE /api/events/:id          → supprimer
+- POST   /api/events/:id/complete → marquer comme complété
+- POST   /api/events/:id/postpone → reporter (avec nouvelle date)
+- GET    /api/events/upcoming     → 7 prochains jours avec météo
+
+★ SUGGESTIONS ENGINE (backend/src/services/suggestionsService.js) :
+- getSuggestions(userId, lat, lon) :
+  1. Récupère météo actuelle (via weatherService)
+  2. Récupère activités user + activités publiques populaires
+  3. Score chaque activité : compatibilité météo (40%) + popularité (20%) + historique user (20%) + heure/jour (20%)
+  4. Retourne top 5 avec explication
+- scheduleDailySuggestions() : cron job 8h matin, envoie notif pour chaque user actif
+
+★ STATS (backend/src/controllers/statsController.js + routes/stats.js) :
+- GET /api/stats/overview     → total activités, events complétés, streak, temps total
+- GET /api/stats/weather      → corrélation météo/activité (% outdoor par condition)
+- GET /api/stats/timeline     → activités par mois (12 derniers mois)
+- GET /api/stats/categories   → répartition par catégorie
+- GET /api/stats/streaks      → calcul des séries consécutives
+
+★ ROUTES INDEX (backend/src/routes/index.js) :
+- Agrège toutes les routes : /api/auth, /api/weather, /api/activities, /api/events, /api/stats
+- Ajoute /api/health et /api/docs (Swagger simple)</pre>
+        <div class="prompt-actions">
+          <button class="btn btn-copy" id="btn-copy-5" onclick="copyPrompt(5)"
+                  aria-label="Copier le prompt 5 dans le presse-papier">
+            📋 Copier ce prompt
+          </button>
+          <button class="btn btn-next" onclick="nextPrompt(5)"
+                  aria-label="Marquer le prompt 5 comme copié et passer au prompt 6">
+            ✅ Copié — Prompt suivant
+          </button>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─── PROMPT 6 ────────────────────────────────────────────── -->
+  <article class="prompt-card" id="card-6" aria-expanded="false" role="listitem">
+    <button class="prompt-header" onclick="toggleCard(6)"
+            aria-controls="body-6"
+            aria-label="Prompt 6 : Mobile Setup et GPS — ouvrir ou fermer">
+      <span class="prompt-number" aria-hidden="true">6</span>
+      <span class="prompt-title">Mobile Setup + GPS</span>
+      <span class="prompt-status" id="status-6">En attente</span>
+      <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="prompt-body" id="body-6" role="region" aria-label="Contenu du prompt 6">
+      <div class="prompt-body-inner">
+        <pre class="prompt-text" id="text-6">Continue LeisureFlow. Crée maintenant la partie mobile React Native (Expo Router) :
+
+PACKAGE.JSON mobile avec : expo ~50, react-native, expo-location, expo-secure-store, expo-haptics, expo-notifications, @react-navigation/native + bottom-tabs + stack, @tanstack/react-query, axios, react-native-svg, @expo/vector-icons, date-fns, @react-native-async-storage/async-storage, react-native-reanimated, react-native-gesture-handler, react-native-safe-area-context, react-native-screens
+
+APP.JSON : permissions iOS NSLocationWhenInUseUsageDescription, Android ACCESS_FINE_LOCATION + ACCESS_COARSE_LOCATION
+
+APP/_LAYOUT.TSX (Expo Router) :
+- QueryClient avec gcTime: 30 * 60 * 1000 (React Query v5)
+- focusManager.setEventListener branché sur AppState (refetch quand app revient au premier plan)
+- QueryClientProvider > Stack
+
+★ LOCATION CONTEXT (mobile/src/contexts/LocationContext.tsx) :
+
+GPS Haute Précision avec expo-location :
+- requestPermissions() : requestForegroundPermissionsAsync + vérifier hasServicesEnabledAsync
+- getCurrentPosition() : Location.getCurrentPositionAsync avec accuracy: Location.Accuracy.Highest (fix initial précis), timeout: 15000
+- startWatching() : Location.watchPositionAsync avec accuracy: Location.Accuracy.Balanced (économe en continu), distanceInterval: 100, timeInterval: 30000 (Android)
+- stopWatching() : subscription?.remove() — OBLIGATOIRE dans le cleanup useEffect
+- hasLocationChanged(newLat, newLon) : calcul distance Haversine, retourne true si > 200m
+- Throttling callback : ignorer si dernier update < 10 secondes
+- State exposé : location {latitude, longitude, timestamp}, accuracy, error, loading, permissionStatus
+- useEffect initial : request permissions → getCurrentPosition → startWatching
+- Cleanup : stopWatching on unmount (return () => subscription?.remove())
+- Log console : "📍 GPS Position: [lat, lon] accuracy: Xm"</pre>
+        <div class="prompt-actions">
+          <button class="btn btn-copy" id="btn-copy-6" onclick="copyPrompt(6)"
+                  aria-label="Copier le prompt 6 dans le presse-papier">
+            📋 Copier ce prompt
+          </button>
+          <button class="btn btn-next" onclick="nextPrompt(6)"
+                  aria-label="Marquer le prompt 6 comme copié et passer au prompt 7">
+            ✅ Copié — Prompt suivant
+          </button>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─── PROMPT 7 ────────────────────────────────────────────── -->
+  <article class="prompt-card" id="card-7" aria-expanded="false" role="listitem">
+    <button class="prompt-header" onclick="toggleCard(7)"
+            aria-controls="body-7"
+            aria-label="Prompt 7 : WeatherContext et WeatherAPI — ouvrir ou fermer">
+      <span class="prompt-number" aria-hidden="true">7</span>
+      <span class="prompt-title">WeatherContext + WeatherAPI</span>
+      <span class="prompt-status" id="status-7">En attente</span>
+      <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="prompt-body" id="body-7" role="region" aria-label="Contenu du prompt 7">
+      <div class="prompt-body-inner">
+        <pre class="prompt-text" id="text-7">Continue LeisureFlow. Crée le système météo côté mobile (React Query v5) :
+
+★ TYPES (mobile/src/types/weather.ts) :
+export interface WeatherData {
+  current: { temp, feelsLike, humidity, pressure, dewPoint, uvIndex, visibility, clouds, wind: {speed, speedKmh, deg, gust, direction}, weather: [{id, main, description, icon, iconUrl}], isDay, isOutdoorFriendly, comfortLevel: {score, label} }
+  hourly: { dt, temp, feelsLike, humidity, wind, weather, pop, rain, snow }[]
+  daily: { dt, dayName, temp: {min, max, day, night}, feelsLike, humidity, uvIndex, wind, weather, pop, rain, snow, isOutdoorFriendly }[]
+  alerts?: { event, description, start, end, severity }[]
+}
+
+★ WEATHER API SERVICE (mobile/src/services/weatherAPI.ts) :
+- getFullWeather(lat, lon) : GET /api/weather/current?lat={lat.toFixed(6)}&lon={lon.toFixed(6)}
+- getHourly, getDaily, getAlerts, getActivityRecommendation
+
+★ HOOK useWeather (mobile/src/hooks/useWeather.ts) — avec React Query v5 :
+- Utilise useLocation() pour récupérer les coordonnées GPS
+- Arrondit les coordonnées à 4 décimales dans le queryKey (évite refetch si GPS flotte de quelques mètres)
+- Envoie les coordonnées à 6 décimales à l'API (précision maximale)
+- queryKey: ['weather', roundCoord(lat, 4), roundCoord(lon, 4)]
+- queryFn: appelle getCurrentPositionAsync(Highest) pour coord fraîche PUIS fetchWeather
+- enabled: !!location
+- staleTime: 2 * 60 * 1000
+- gcTime: 30 * 60 * 1000  (React Query v5 — pas cacheTime)
+- refetchInterval: 5 * 60 * 1000
+- retry: 1
+- Cache AsyncStorage : loadCache() lit "@leisureflow_weather_cache", utilise si < 30 min. saveCache(data) écrit avec _cachedAt timestamp.
+- Fallback sur cache si erreur réseau
+
+★ UTILITAIRE (mobile/src/utils/geo.ts) :
+export function roundCoord(value: number, decimals = 3): number {
+  const factor = Math.pow(10, decimals);
+  return Math.round(value * factor) / factor;
+}</pre>
+        <div class="prompt-actions">
+          <button class="btn btn-copy" id="btn-copy-7" onclick="copyPrompt(7)"
+                  aria-label="Copier le prompt 7 dans le presse-papier">
+            📋 Copier ce prompt
+          </button>
+          <button class="btn btn-next" onclick="nextPrompt(7)"
+                  aria-label="Marquer le prompt 7 comme copié et passer au prompt 8">
+            ✅ Copié — Prompt suivant
+          </button>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─── PROMPT 8 ────────────────────────────────────────────── -->
+  <article class="prompt-card" id="card-8" aria-expanded="false" role="listitem">
+    <button class="prompt-header" onclick="toggleCard(8)"
+            aria-controls="body-8"
+            aria-label="Prompt 8 : Écran Météo — ouvrir ou fermer">
+      <span class="prompt-number" aria-hidden="true">8</span>
+      <span class="prompt-title">Écran Météo</span>
+      <span class="prompt-status" id="status-8">En attente</span>
+      <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="prompt-body" id="body-8" role="region" aria-label="Contenu du prompt 8">
+      <div class="prompt-body-inner">
+        <pre class="prompt-text" id="text-8">Continue LeisureFlow. Crée l'écran météo complet (mobile/src/screens/Weather/) :
+
+★ WEATHERSCREEN (WeatherScreen.tsx) :
+- Utilise useWeather() et useLocation()
+- ScrollView avec pull-to-refresh (RefreshControl)
+- Affichage des états : loading (ActivityIndicator), error (avec bouton retry), no-location
+- Sections : CurrentWeather, HourlyForecast, DailyForecast, WeatherAlerts (si présentes)
+
+★ CURRENTWEATHER (components/weather/CurrentWeather.tsx) :
+- Grande icône météo (Image 80x80 depuis iconUrl)
+- Température principale (gros chiffre), description
+- Grille 2x3 : ressenti, humidité, vent (km/h), pression, UV, visibilité
+- Indicateur isOutdoorFriendly (badge coloré)
+- comfortLevel avec score et label
+
+★ HOURLYFORECAST (components/weather/HourlyForecast.tsx) :
+- ScrollView horizontal, 24 premières heures
+- Chaque item : heure, icône 30x30, temp °C, pop% (si >10%)
+- Highlight sur l'heure courante
+
+★ DAILYFORECAST (components/weather/DailyForecast.tsx) :
+- 7 jours, liste verticale
+- Chaque ligne : jour, icône 30x30, min/max temp, pop%, isOutdoorFriendly (icône)
+
+★ WEATHERALERTS (components/weather/WeatherAlerts.tsx) :
+- Affichage si alerts présentes
+- Chaque alerte : badge rouge/orange selon severity, event, description (expandable), dates début/fin
+- Design : fond rouge translucide, icône warning
+
+★ STYLES :
+- Fond sombre dégradé (LinearGradient selon conditions : soleil=bleu ciel, pluie=gris, nuit=indigo)
+- Cartes avec border radius 16, shadow subtil
+- Animations : FadeIn sur CurrentWeather, SlideIn sur HourlyForecast
+- Tous les textes utilisent useTheme() pour les couleurs</pre>
+        <div class="prompt-actions">
+          <button class="btn btn-copy" id="btn-copy-8" onclick="copyPrompt(8)"
+                  aria-label="Copier le prompt 8 dans le presse-papier">
+            📋 Copier ce prompt
+          </button>
+          <button class="btn btn-next" onclick="nextPrompt(8)"
+                  aria-label="Marquer le prompt 8 comme copié et passer au prompt 9">
+            ✅ Copié — Prompt suivant
+          </button>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─── PROMPT 9 ────────────────────────────────────────────── -->
+  <article class="prompt-card" id="card-9" aria-expanded="false" role="listitem">
+    <button class="prompt-header" onclick="toggleCard(9)"
+            aria-controls="body-9"
+            aria-label="Prompt 9 : Navigation et Écrans principaux — ouvrir ou fermer">
+      <span class="prompt-number" aria-hidden="true">9</span>
+      <span class="prompt-title">Navigation + Écrans principaux</span>
+      <span class="prompt-status" id="status-9">En attente</span>
+      <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="prompt-body" id="body-9" role="region" aria-label="Contenu du prompt 9">
+      <div class="prompt-body-inner">
+        <pre class="prompt-text" id="text-9">Continue LeisureFlow. Crée la navigation et les écrans restants (Expo Router) :
+
+★ NAVIGATION EXPO ROUTER :
+1. app/_layout.tsx : déjà créé (QueryClientProvider + focusManager)
+2. app/(tabs)/_layout.tsx : TabNavigator avec 5 onglets (Ionicons) :
+   - index → HomeScreen (home)
+   - weather → WeatherScreen (cloud)
+   - explore → ExploreScreen (compass)
+   - stats → StatsScreen (stats-chart)
+   - profile → ProfileScreen (person)
+   Style : backgroundColor colors.card, activeTintColor colors.primary, height 65
+
+★ ÉCRANS :
+3. app/(tabs)/index.tsx : HomeScreen — greeting dynamique, WeatherWidget compact (cliquable → router.push('/weather'))
+4. app/(tabs)/weather.tsx : importe WeatherScreen depuis src/screens/Weather/WeatherScreen
+5. app/(tabs)/explore.tsx, stats.tsx, profile.tsx : écrans basiques
+
+★ WeatherWidget.tsx (mobile/src/components/weather/WeatherWidget.tsx) :
+Widget compact pour HomeScreen : icône météo (Image 50x50), température °C, description, humidité %, vent km/h. Cliquable → onPress.
+
+★ ÉCRANS AUTH :
+- app/login.tsx : LoginScreen avec email + password, appelle authService
+- app/register.tsx : RegisterScreen
+
+★ useFocusEffect (important pour batterie) :
+Dans WeatherScreen, utiliser useFocusEffect de expo-router pour démarrer/stopper le watcher GPS uniquement quand l'écran est actif :
+useFocusEffect(useCallback(() => {
+  startWatching();
+  return () => stopWatching();
+}, []));
+
+★ THEME (mobile/src/contexts/ThemeContext.tsx) :
+Couleurs light : primary #6C63FF, background #F8F9FE, card #FFFFFF, text #1A1A2E
+Couleurs dark : primary #8B83FF, background #0D0D1A, card #1A1A2E, text #F0F0F5
+toggleTheme, useTheme hook</pre>
+        <div class="prompt-actions">
+          <button class="btn btn-copy" id="btn-copy-9" onclick="copyPrompt(9)"
+                  aria-label="Copier le prompt 9 dans le presse-papier">
+            📋 Copier ce prompt
+          </button>
+          <button class="btn btn-next" onclick="nextPrompt(9)"
+                  aria-label="Marquer le prompt 9 comme copié et passer au prompt 10">
+            ✅ Copié — Prompt suivant
+          </button>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─── PROMPT 10 ───────────────────────────────────────────── -->
+  <article class="prompt-card" id="card-10" aria-expanded="false" role="listitem">
+    <button class="prompt-header" onclick="toggleCard(10)"
+            aria-controls="body-10"
+            aria-label="Prompt 10 : Finalisation — ouvrir ou fermer">
+      <span class="prompt-number" aria-hidden="true">10</span>
+      <span class="prompt-title">Finalisation</span>
+      <span class="prompt-status" id="status-10">En attente</span>
+      <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="prompt-body" id="body-10" role="region" aria-label="Contenu du prompt 10">
+      <div class="prompt-body-inner">
+        <pre class="prompt-text" id="text-10">Continue LeisureFlow. Finalise le projet :
+
+★ AUTH SERVICE (mobile/src/services/authService.ts) :
+- login(email, password) : POST /api/auth/login, stocke token dans SecureStore "leisureflow_token"
+- register(data) : POST /api/auth/register
+- logout() : supprime token SecureStore
+- getToken() : lit SecureStore
+- isAuthenticated() : vérifie token valide
+
+★ API SERVICE (mobile/src/services/api.ts) :
+- axios instance, baseURL depuis process.env.EXPO_PUBLIC_API_URL
+- Interceptor request : ajoute Bearer token depuis SecureStore
+- Interceptor response : supprime token si 401
+
+★ VARIABLES D'ENVIRONNEMENT mobile/.env :
+EXPO_PUBLIC_OPENWEATHER_API_KEY=ta_clé_ici
+EXPO_PUBLIC_API_URL=http://localhost:3001
+
+Note : EXPO_PUBLIC_ est obligatoire pour que Expo expose les variables côté client
+
+★ STYLES COMMUNS :
+Tous les écrans utilisent useTheme() pour les couleurs. Design moderne : borderRadius 16, shadows subtiles, padding cohérent.
+
+★ VÉRIFICATIONS FINALES :
+- Tous les imports TypeScript sont corrects
+- Le .env.example contient EXPO_PUBLIC_OPENWEATHER_API_KEY
+- Les permissions GPS sont dans app.json (Android ACCESS_FINE_LOCATION)
+- Le cache Redis a TTL 300 secondes
+- L'auto-refresh météo est à 5 minutes (refetchInterval: 5 * 60 * 1000)
+- Le GPS utilise Highest pour fix initial + Balanced pour watch continu
+- Les coordonnées sont arrondies à 4 décimales dans queryKey
+- Les coordonnées sont envoyées à 6 décimales à l'API
+- gcTime utilisé (React Query v5) — PAS cacheTime
+- Cleanup GPS subscription?.remove() dans tous les useEffect
+- focusManager branché sur AppState dans app/_layout.tsx
+- EXPO_PUBLIC_ prefix sur toutes les variables d'env côté mobile
+
+★ DOCUMENTATION :
+1. docs/WEATHER_API.md : endpoints, paramètres, flux GPS→Backend→OpenWeather→Client
+2. README.md mis à jour avec instructions d'installation complètes</pre>
+        <div class="prompt-actions">
+          <button class="btn btn-copy" id="btn-copy-10" onclick="copyPrompt(10)"
+                  aria-label="Copier le prompt 10 dans le presse-papier">
+            📋 Copier ce prompt
+          </button>
+          <button class="btn btn-next" onclick="nextPrompt(10)"
+                  aria-label="Marquer le prompt 10 comme terminé">
+            ✅ Copié — Terminer
+          </button>
+        </div>
+      </div>
+    </div>
+  </article>
+
+</main>
+
+<!-- ── Toast ──────────────────────────────────────────────────── -->
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- JAVASCRIPT                                                      -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<script>
+  // ── State ──────────────────────────────────────────────────────
+  const TOTAL = 10;
+  const copiedSet = new Set();   // indices (1-based) des prompts copiés
+
+  // ── DOM helpers ────────────────────────────────────────────────
+  function getCard(n)   { return document.getElementById('card-' + n);   }
+  function getBody(n)   { return document.getElementById('body-' + n);   }
+  function getStatus(n) { return document.getElementById('status-' + n); }
+  function getRawText(n){ return document.getElementById('text-' + n).textContent; }
+
+  // ── Toggle open / close ────────────────────────────────────────
+  function toggleCard(n) {
+    const card = getCard(n);
+    const body = getBody(n);
+    const isOpen = body.classList.contains('open');
+    if (isOpen) {
+      body.classList.remove('open');
+      card.setAttribute('aria-expanded', 'false');
+    } else {
+      body.classList.add('open');
+      card.setAttribute('aria-expanded', 'true');
+    }
+  }
+
+  function openCard(n) {
+    const card = getCard(n);
+    const body = getBody(n);
+    if (!body.classList.contains('open')) {
+      body.classList.add('open');
+      card.setAttribute('aria-expanded', 'true');
+    }
+  }
+
+  function closeCard(n) {
+    const card = getCard(n);
+    const body = getBody(n);
+    body.classList.remove('open');
+    card.setAttribute('aria-expanded', 'false');
+  }
+
+  // ── Clipboard (avec fallback execCommand) ──────────────────────
+  async function copyToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (_) { /* fall through */ }
+    }
+    // Fallback pour HTTP non sécurisé ou clipboard API non dispo
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.top = '-9999px';
+    ta.style.left = '-9999px';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (_) {}
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  // ── Toast ──────────────────────────────────────────────────────
+  let toastTimer = null;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ── Progress ───────────────────────────────────────────────────
+  function updateProgress() {
+    const count = copiedSet.size;
+    const pct   = Math.round((count / TOTAL) * 100);
+    document.getElementById('progress-text').textContent = count + '/' + TOTAL + ' prompts copiés';
+    document.getElementById('progress-pct').textContent  = pct + ' %';
+    document.getElementById('progress-bar-fill').style.width = pct + '%';
+    const track = document.getElementById('progress-bar-track');
+    track.setAttribute('aria-valuenow', count);
+  }
+
+  // ── Mark as copied ─────────────────────────────────────────────
+  function markCopied(n) {
+    copiedSet.add(n);
+    const card   = getCard(n);
+    const status = getStatus(n);
+    const btnCopy = document.getElementById('btn-copy-' + n);
+    card.classList.add('copied');
+    status.textContent = '✓ Copié';
+    btnCopy.classList.remove('btn-copy');
+    btnCopy.classList.add('btn-success');
+    btnCopy.textContent = '✓ Copié';
+    btnCopy.disabled = true;
+    updateProgress();
+  }
+
+  // ── Copy prompt ────────────────────────────────────────────────
+  async function copyPrompt(n) {
+    const rawText = getRawText(n);   // texte brut — PAS échappé HTML
+    const ok = await copyToClipboard(rawText);
+    if (ok) {
+      markCopied(n);
+      showToast('✅ Prompt ' + n + ' copié dans le presse-papier !');
+    } else {
+      showToast('⚠️ Impossible de copier automatiquement. Sélectionnez le texte manuellement.');
+    }
+  }
+
+  // ── Next prompt ────────────────────────────────────────────────
+  function nextPrompt(n) {
+    markCopied(n);
+    closeCard(n);
+    if (n < TOTAL) {
+      openCard(n + 1);
+      // Auto-scroll vers le prochain prompt
+      setTimeout(() => {
+        const nextCard = getCard(n + 1);
+        if (nextCard) {
+          nextCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 50);
+      showToast('➡️ Prompt ' + (n + 1) + ' ouvert !');
+    } else {
+      showToast('🎉 Tous les prompts ont été copiés ! LeisureFlow est prêt.');
+    }
+  }
+
+  // ── Init : ouvrir le premier prompt au chargement ──────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    updateProgress();   // affiche "0/10 prompts copiés"
+    openCard(1);        // ouvre le premier prompt automatiquement
+    // Scroll vers le premier prompt après ouverture
+    setTimeout(() => {
+      const card1 = getCard(1);
+      if (card1) card1.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  });
+</script>
+</body>
+</html>
